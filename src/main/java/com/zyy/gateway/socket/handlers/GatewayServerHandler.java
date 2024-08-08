@@ -38,8 +38,8 @@ public class GatewayServerHandler extends BaseHandler<FullHttpRequest> {
 		if ("/favicon.ico".equals(uri)) return;
 
 		//开启网关会话（抽象），并调用映射获取泛化调用引用，执行泛化调用
-		GatewaySession gatewaySession = gatewaySessionFactory.openSession();
-		IGenericReference reference = gatewaySession.getMapper(uri);
+		GatewaySession gatewaySession = gatewaySessionFactory.openSession(uri);
+		IGenericReference reference = gatewaySession.getMapper();
 		String result = reference.$invoke("test") + " " + System.currentTimeMillis();
 
 		//response
