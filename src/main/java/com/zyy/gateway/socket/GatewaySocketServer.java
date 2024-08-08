@@ -1,5 +1,6 @@
-package com.zyy.gateway.session;
+package com.zyy.gateway.socket;
 
+import com.zyy.gateway.session.defaults.DefaultGatewaySessionFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -13,17 +14,20 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 
-public class SessionServer implements Callable<Channel> {
-	private final Logger logger = LoggerFactory.getLogger(SessionServer.class);
+/**
+ * 网关会话服务：实现 Callable接口，后续提交给线程池
+ */
+public class GatewaySocketServer implements Callable<Channel> {
+	private final Logger logger = LoggerFactory.getLogger(GatewaySocketServer.class);
 
-	private Configuration configuration;
+	private DefaultGatewaySessionFactory gatewaySessionFactory;
 
 	private final EventLoopGroup boss = new NioEventLoopGroup(1);
 	private final EventLoopGroup worker = new NioEventLoopGroup();
 	private Channel channel;
 
-	public SessionServer(Configuration configuration) {
-		this.configuration = configuration;
+	public GatewaySocketServer(DefaultGatewaySessionFactory gatewaySessionFactory) {
+		this.gatewaySessionFactory = gatewaySessionFactory;
 	}
 
 	@Override
@@ -35,7 +39,7 @@ public class SessionServer implements Callable<Channel> {
 			b.group(boss, worker)
 					.channel(NioServerSocketChannel.class)
 					.option(ChannelOption.SO_BACKLOG, 128)
-					.childHandler(new SessionChannelInitializer(configuration));
+					.childHandler(new GatewayChannelInitializer(gatewaySessionFactory));
 
 			channelFuture = b.bind(new InetSocketAddress(7397)).syncUninterruptibly();
 			this.channel = channelFuture.channel();

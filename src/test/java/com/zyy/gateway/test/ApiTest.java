@@ -1,8 +1,10 @@
 package com.zyy.gateway.test;
 
+import com.zyy.gateway.mapping.HttpCommandType;
+import com.zyy.gateway.mapping.HttpStatement;
 import com.zyy.gateway.session.Configuration;
-import com.zyy.gateway.session.GenericReferenceSessionFactoryBuilder;
-import com.zyy.gateway.session.SessionServer;
+import com.zyy.gateway.session.defaults.DefaultGatewaySessionFactory;
+import com.zyy.gateway.socket.GatewaySocketServer;
 import io.netty.channel.Channel;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -23,15 +25,35 @@ public class ApiTest {
 	 * @throws InterruptedException
 	 */
 	@Test
-	public void test() throws ExecutionException, InterruptedException {
+	public void test_gateway() throws ExecutionException, InterruptedException {
+
+		//1.创建配置项
 		Configuration configuration = new Configuration();
-		configuration.addGenericReference("api-gateway-test", "cn.bugstack.gateway.rpc.IActivityBooth", "sayHi");
+		HttpStatement httpStatement = new HttpStatement(
+				"api-gateway-test",
+				"cn.bugstack.gateway.rpc.IActivityBooth",
+				"sayHi",
+				"/wg/activity/sayHi",
+				HttpCommandType.GET);
+		configuration.addMapper(httpStatement);
 
-		GenericReferenceSessionFactoryBuilder genericReferenceSessionFactoryBuilder = new GenericReferenceSessionFactoryBuilder();
-		Future<Channel> future = genericReferenceSessionFactoryBuilder.build(configuration);
+		//2.创建默认会话工厂
+		DefaultGatewaySessionFactory defaultGatewaySessionFactory = new DefaultGatewaySessionFactory(configuration);
 
-		logger.info("服务启动完成 {}", future.get().id());
+		//3.创建服务端实例
+		GatewaySocketServer gatewaySocketServer = new GatewaySocketServer(defaultGatewaySessionFactory);
+		Future<Channel> future = Executors.newFixedThreadPool(2).submit(gatewaySocketServer);
+		Channel channel = future.get();
+
+		if (null == channel) throw new RuntimeException("netty server start error channel is null");
+
+		while (!channel.isActive()) {
+			logger.info("netty server gateway start Ing ...");
+			Thread.sleep(500);
+		}
+		logger.info("netty server gateway start Done! {}", channel.localAddress());
 
 		Thread.sleep(Long.MAX_VALUE);
+
 	}
 }

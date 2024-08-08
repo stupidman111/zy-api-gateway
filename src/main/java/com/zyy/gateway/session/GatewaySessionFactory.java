@@ -7,9 +7,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- * 泛化调用会话工厂接口
+ * 网关会话工厂接口
  */
-public interface IGenericReferenceSessionFactory {
+public interface GatewaySessionFactory {
 
-	Future<Channel> openSession() throws ExecutionException, InterruptedException;
+	GatewaySession openSession();
 }

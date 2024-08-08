@@ -1,25 +1,29 @@
-package com.zyy.gateway.session.handlers;
+package com.zyy.gateway.socket.handlers;
 
 import com.zyy.gateway.bind.IGenericReference;
-import com.zyy.gateway.session.BaseHandler;
+import com.zyy.gateway.session.GatewaySession;
+import com.zyy.gateway.session.defaults.DefaultGatewaySessionFactory;
+import com.zyy.gateway.socket.BaseHandler;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.zyy.gateway.session.Configuration;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SessionServerHandler extends BaseHandler<FullHttpRequest> {
+/**
+ * 网关服务childHandler---根据http请求，获取泛化调用，返回结果
+ */
+public class GatewayServerHandler extends BaseHandler<FullHttpRequest> {
 
-	private final Logger logger = LoggerFactory.getLogger(SessionServerHandler.class);
+	private final Logger logger = LoggerFactory.getLogger(GatewayServerHandler.class);
 
-	private final Configuration configuration;
+	private final DefaultGatewaySessionFactory gatewaySessionFactory;
 
-	public SessionServerHandler(Configuration configuration) {
-		this.configuration = configuration;
+	public GatewayServerHandler(DefaultGatewaySessionFactory gatewaySessionFactory) {
+		this.gatewaySessionFactory = gatewaySessionFactory;
 	}
 
 
@@ -27,16 +31,19 @@ public class SessionServerHandler extends BaseHandler<FullHttpRequest> {
 	protected void session(ChannelHandlerContext ctx, final Channel channel, FullHttpRequest request) {
 		logger.info("网关接收请求 uri: {} method: {}", request.uri(), request.method());
 
-		//对 icon 的请求直接返回
-		String methodName = request.uri().substring(1);
-		if ("favicon.ico".equals(methodName)) return;;
+		//获取http调用接口
+		String uri = request.uri();
+
+		//如果调用的的是图标，直接返回
+		if ("/favicon.ico".equals(uri)) return;
+
+		//开启网关会话（抽象），并调用映射获取泛化调用引用，执行泛化调用
+		GatewaySession gatewaySession = gatewaySessionFactory.openSession();
+		IGenericReference reference = gatewaySession.getMapper(uri);
+		String result = reference.$invoke("test") + " " + System.currentTimeMillis();
 
 		//response
 		DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-
-		//服务泛化调用
-		IGenericReference reference = configuration.getGenericReference("sayHi");
-		String result = reference.$invoke("test") + " " + System.currentTimeMillis();
 
 		//设置回写内容
 		response.content().writeBytes(JSON.toJSONBytes(result, SerializerFeature.PrettyFormat));
