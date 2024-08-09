@@ -20,7 +20,7 @@ public class DefaultGatewaySessionFactory implements GatewaySessionFactory {
 	@Override
 	public GatewaySession openSession(String uri) {
 		UnpooledDataSourceFactory dataSourceFactory = new UnpooledDataSourceFactory();
-		dataSourceFactory.setProperties(configuration, uri);
+		dataSourceFactory.setProperties(configuration, uri);//默认设置 Dubbo 数据源，这里后续应该会使用一种 类似 switch 的方式根据请求信息选择数据源
 		DataSource dataSource = dataSourceFactory.getDataSource();
 
 		return new DefaultGatewaySession(configuration, uri, dataSource);

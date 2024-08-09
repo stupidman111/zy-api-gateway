@@ -15,6 +15,9 @@ public class HttpStatement {
 	/** 服务方法：RPC#method */
 	private String methodName;
 
+	/** 参数类型(RPC限定单参数注册) */
+	private String parameterType;
+
 	/** 网关接口：对应 HTTP请求 */
 	private String uri;
 
@@ -24,11 +27,13 @@ public class HttpStatement {
 	public HttpStatement(String application,
 						 String interfaceName,
 						 String methodName,
+						 String parameterType,
 						 String uri,
 						 HttpCommandType httpCommandType) {
 		this.application = application;
 		this.interfaceName = interfaceName;
 		this.methodName = methodName;
+		this.parameterType = parameterType;
 		this.uri = uri;
 		this.httpCommandType = httpCommandType;
 	}
@@ -51,5 +56,9 @@ public class HttpStatement {
 
 	public HttpCommandType getHttpCommandType() {
 		return httpCommandType;
+	}
+
+	public String getParameterType() {
+		return parameterType;
 	}
 }
